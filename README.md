@@ -9,3 +9,6 @@ dish to make using mostly those ingredients. Show the dish name, the ingredients
 
 # AI Profile
 https://atibbepari-carrer-profile.lovable.app
+
+# Ai as Analyst
+-Claude acting as Analyst and for mobile user data analysis from " user_behaviour_dataset" and generate the Oneplus_budget_analysis.
