@@ -6,3 +6,6 @@
 - Let you type in a list of ingredients I have at home. When I press a button,  Claude integrated inside the artifact to suggest one
 dish to make using mostly those ingredients. Show the dish name, the ingredients it uses, a short list of any extras I'd need, and clear step-by-step instructions. 
 - ‘Surprise me’ button for a more creative dish, and keep the design clean and appetizing
+
+# AI Profile
+https://atibbepari-carrer-profile.lovable.app
