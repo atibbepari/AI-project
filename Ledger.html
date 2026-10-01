@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f4f1fb; --ink:#1d1a2e; --ink-soft:#716c8a;
+  --card:#ffffff; --line:#e5e0f5;
+  --sage:#00c389; --sage-soft:#dafff2;
+  --rust:#ff4d6d; --rust-soft:#ffe3e9;
+  --accent:#7c4dff; --accent2:#00c2ff;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  box-sizing:border-box;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#15131f; --ink:#f1eefb; --ink-soft:#9b96b8;
+    --card:#201d31; --line:#332f49;
+    --sage:#2de6a8; --sage-soft:#133229;
+    --rust:#ff6b86; --rust-soft:#3a1c26;
+    --accent:#9a7bff; --accent2:#3fd2ff;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#15131f; --ink:#f1eefb; --ink-soft:#9b96b8;
+  --card:#201d31; --line:#332f49;
+  --sage:#2de6a8; --sage-soft:#133229;
+  --rust:#ff6b86; --rust-soft:#3a1c26;
+  --accent:#9a7bff; --accent2:#3fd2ff;
+}
+*{box-sizing:border-box;}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:'Inter',system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  min-height:100%;
+}
+.wrap{max-width:640px; margin:0 auto; padding:20px 18px 100px;}
+.balance-band{
+  background:linear-gradient(135deg, var(--accent), var(--accent2));
+  color:#fff; border-radius:20px; padding:22px 24px; margin-bottom:20px;
+  position:relative; overflow:hidden;
+}
+.balance-band .label{font-size:13px; color:rgba(255,255,255,.75); letter-spacing:.01em;}
+.balance-band .amount{
+  font-family:'Source Serif 4',Georgia,serif; font-weight:600;
+  font-size:clamp(32px,9vw,42px); margin-top:4px; line-height:1.1;
+}
+.balance-band .amount.neg{color:#ffe08a;}
+.balance-band .top-row{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+.currency-pill{
+  background:rgba(255,255,255,.2); color:#fff; border:none; border-radius:20px;
+  padding:6px 12px; font-size:13px; font-weight:600; cursor:pointer;
+}
+.tabs{
+  display:flex; gap:6px; background:var(--card); border:1px solid var(--line);
+  border-radius:12px; padding:4px; margin-bottom:16px;
+}
+.tab{
+  flex:1; text-align:center; padding:9px 0; border-radius:9px; cursor:pointer;
+  font-size:14px; font-weight:500; color:var(--ink-soft); user-select:none;
+  transition:background .15s, color .15s;
+}
+.tab.active{background:var(--sage-soft); color:var(--sage); font-weight:600;}
+.period-nav{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:16px; gap:10px;
+}
+.period-nav button{
+  background:var(--card); border:1px solid var(--line); color:var(--ink);
+  width:36px; height:36px; border-radius:10px; font-size:16px; cursor:pointer;
+  flex:none;
+}
+.period-nav button:active{transform:scale(.94);}
+.period-label{font-size:15px; font-weight:600; text-align:center; flex:1;}
+.period-label .sub{display:block; font-size:12px; font-weight:400; color:var(--ink-soft); margin-top:1px;}
+.stat-row{display:flex; gap:10px; margin-bottom:16px;}
+.stat{
+  flex:1; background:var(--card); border:1px solid var(--line); border-radius:14px;
+  padding:14px 16px;
+}
+.stat .label{font-size:12px; color:var(--ink-soft);}
+.stat .val{font-family:'Source Serif 4',Georgia,serif; font-size:20px; font-weight:600; margin-top:3px;}
+.stat.in .val{color:var(--sage);}
+.stat.out .val{color:var(--rust);}
+.card{
+  background:var(--card); border:1px solid var(--line); border-radius:14px;
+  padding:16px; margin-bottom:16px;
+}
+.card h2{font-size:14px; font-weight:600; margin:0 0 12px; color:var(--ink-soft); text-transform:none;}
+.bar-row{margin-bottom:10px;}
+.bar-row:last-child{margin-bottom:0;}
+.bar-top{display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;}
+.bar-top .amt{color:var(--ink-soft); font-variant-numeric:tabular-nums;}
+.bar-track{height:8px; background:var(--paper); border-radius:5px; overflow:hidden;}
+.bar-fill{height:100%; background:var(--rust); border-radius:5px;}
+.empty-note{font-size:13px; color:var(--ink-soft); text-align:center; padding:10px 0;}
+.entry{
+  display:flex; align-items:center; gap:12px; padding:12px 0;
+  border-bottom:1px solid var(--line);
+}
+.entry:last-child{border-bottom:none;}
+.entry .dot{width:8px; height:8px; border-radius:50%; flex:none;}
+.entry .dot.income{background:var(--sage);}
+.entry .dot.expense{background:var(--rust);}
+.entry .mid{flex:1; min-width:0;}
+.entry .cat{font-size:14px; font-weight:500;}
+.entry .meta{font-size:12px; color:var(--ink-soft); margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.entry .amt{font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; flex:none;}
+.entry .amt.income{color:var(--sage);}
+.entry .amt.expense{color:var(--rust);}
+.entry .edit-btn{background:none; border:none; color:var(--ink-soft); font-size:16px; cursor:pointer; padding:4px; flex:none;}
+.fab{
+  position:fixed; right:20px; bottom:calc(24px + env(safe-area-inset-bottom,0px));
+  width:56px; height:56px; border-radius:50%; background:var(--ink); color:var(--paper);
+  border:none; font-size:26px; cursor:pointer; box-shadow:0 6px 18px rgba(0,0,0,.2);
+  display:flex; align-items:center; justify-content:center; line-height:0;
+}
+.fab:active{transform:scale(.95);}
+.sheet-backdrop{
+  position:fixed; inset:0; background:rgba(0,0,0,.4); display:none;
+  align-items:flex-end; justify-content:center; z-index:20;
+}
+.sheet-backdrop.open{display:flex;}
+.sheet{
+  background:var(--card); width:100%; max-width:640px; border-radius:20px 20px 0 0;
+  padding:20px 20px calc(24px + env(safe-area-inset-bottom,0px));
+  max-height:88vh; overflow-y:auto;
+}
+.sheet h3{margin:0 0 16px; font-size:17px;}
+.field{margin-bottom:14px;}
+.field label{display:block; font-size:12px; color:var(--ink-soft); margin-bottom:5px;}
+.field input, .field select, .field textarea{
+  width:100%; padding:11px 12px; border-radius:10px; border:1px solid var(--line);
+  background:var(--paper); color:var(--ink); font-size:15px; font-family:inherit;
+}
+.field textarea{resize:none; height:56px;}
+.type-toggle{display:flex; gap:8px; margin-bottom:14px;}
+.type-toggle button{
+  flex:1; padding:10px 0; border-radius:10px; border:1px solid var(--line);
+  background:var(--paper); color:var(--ink-soft); font-size:14px; font-weight:500; cursor:pointer;
+}
+.type-toggle button.sel.income{background:var(--sage-soft); color:var(--sage); border-color:var(--sage-soft);}
+.type-toggle button.sel.expense{background:var(--rust-soft); color:var(--rust); border-color:var(--rust-soft);}
+.sheet-actions{display:flex; gap:10px; margin-top:6px;}
+.sheet-actions button{
+  flex:1; padding:13px 0; border-radius:11px; border:none; font-size:15px; font-weight:600; cursor:pointer;
+}
+.btn-save{background:var(--ink); color:var(--paper);}
+.btn-delete{background:var(--rust-soft); color:var(--rust);}
+.btn-cancel{background:var(--paper); color:var(--ink-soft); border:1px solid var(--line) !important;}
+.section-title{font-size:14px; font-weight:600; color:var(--ink-soft); margin:0 0 10px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="balance-band">
+    <div class="top-row">
+      <div class="label">Total balance</div>
+      <div class="currency-pill" id="currencyPill">USD</div>
+    </div>
+    <div class="amount" id="balanceAmt">$0.00</div>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-view="daily">Daily</div>
+    <div class="tab" data-view="weekly">Weekly</div>
+    <div class="tab" data-view="monthly">Monthly</div>
+  </div>
+
+  <div class="period-nav">
+    <button id="prevBtn">‹</button>
+    <div class="period-label"><span id="periodMain">—</span><span class="sub" id="periodSub"></span></div>
+    <button id="nextBtn">›</button>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat in"><div class="label">Money in</div><div class="val" id="inAmt">$0.00</div></div>
+    <div class="stat out"><div class="label">Money out</div><div class="val" id="outAmt">$0.00</div></div>
+    <div class="stat"><div class="label">Net</div><div class="val" id="netAmt">$0.00</div></div>
+  </div>
+
+  <div class="card">
+    <h2>Spending by category</h2>
+    <div id="chartBox"><div class="empty-note">No expenses in this period yet.</div></div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <p class="section-title" style="margin:0;">Entries</p>
+      <button id="exportBtn" style="background:var(--sage-soft); color:var(--sage); border:none; border-radius:9px; padding:7px 12px; font-size:13px; font-weight:600; cursor:pointer;">Export CSV</button>
+    </div>
+    <div id="entryList"><div class="empty-note">Nothing logged in this period.</div></div>
+  </div>
+</div>
+
+<button class="fab" id="addBtn" aria-label="Add entry">+</button>
+
+<div class="sheet-backdrop" id="backdrop">
+  <div class="sheet">
+    <h3 id="sheetTitle">Add entry</h3>
+    <div class="type-toggle">
+      <button type="button" class="sel expense" data-type="expense" id="typeExpense">Expense</button>
+      <button type="button" data-type="income" id="typeIncome">Income</button>
+    </div>
+    <div class="field" style="display:flex; gap:10px;">
+      <div style="flex:2;"><label>Amount</label><input type="number" id="fAmount" inputmode="decimal" step="0.01" placeholder="0.00"></div>
+      <div style="flex:1;"><label>Currency</label><select id="fCurrency"></select></div>
+    </div>
+    <div class="field"><label>Date</label><input type="date" id="fDate"></div>
+    <div class="field"><label>Category</label><select id="fCategory"></select></div>
+    <div class="field"><label>Note (optional)</label><textarea id="fNote" placeholder="What was this for?"></textarea></div>
+    <div class="sheet-actions">
+      <button class="btn-cancel" id="cancelBtn">Cancel</button>
+      <button class="btn-save" id="saveBtn">Save</button>
+    </div>
+    <div class="sheet-actions" id="deleteRow" style="display:none; margin-top:10px;">
+      <button class="btn-delete" id="deleteBtn" style="width:100%;">Delete entry</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const EXP_CATS = ["Food","Rent","Transport","Utilities","Health","Entertainment","Shopping","Other"];
+const INC_CATS = ["Salary","Freelance","Gift","Interest","Other"];
+const CURRENCIES = [
+  {code:"USD", symbol:"$"}, {code:"EUR", symbol:"€"}, {code:"GBP", symbol:"£"},
+  {code:"INR", symbol:"₹"}, {code:"JPY", symbol:"¥"}, {code:"AUD", symbol:"A$"},
+  {code:"CAD", symbol:"C$"}, {code:"CHF", symbol:"CHF "}, {code:"CNY", symbol:"¥"}
+];
+let entries = [];
+let view = "daily";
+let refDate = new Date();
+let editingId = null;
+let currency = "USD";
+
+function currencySymbol(code){ return (CURRENCIES.find(c=>c.code===code)||CURRENCIES[0]).symbol; }
+function load(){
+  try{
+    const raw = localStorage.getItem("ledger_entries");
+    entries = raw ? JSON.parse(raw) : [];
+    currency = localStorage.getItem("ledger_currency") || "USD";
+  }catch(e){ entries = []; }
+}
+function save(){
+  try{
+    localStorage.setItem("ledger_entries", JSON.stringify(entries));
+    localStorage.setItem("ledger_currency", currency);
+  }catch(e){}
+}
+function fmt(n){
+  const s = Math.abs(n).toFixed(2);
+  return (n<0?"-":"") + currencySymbol(currency) + s.replace(/\B(?=(\d{3})+(?!\d))/g,",");
+}
+function populateCurrencies(){
+  const sel = document.getElementById("fCurrency");
+  sel.innerHTML = CURRENCIES.map(c=>`<option value="${c.code}">${c.code} ${c.symbol}</option>`).join("");
+  sel.value = currency;
+}
+function toKey(d){ return d.toISOString().slice(0,10); }
+function startOfWeek(d){
+  const x = new Date(d); const day = (x.getDay()+6)%7; // Monday start
+  x.setDate(x.getDate()-day); x.setHours(0,0,0,0); return x;
+}
+function periodRange(){
+  const d = new Date(refDate);
+  if(view==="daily"){
+    const s = new Date(d); s.setHours(0,0,0,0);
+    const e = new Date(s); e.setDate(e.getDate()+1);
+    return [s,e];
+  } else if(view==="weekly"){
+    const s = startOfWeek(d);
+    const e = new Date(s); e.setDate(e.getDate()+7);
+    return [s,e];
+  } else {
+    const s = new Date(d.getFullYear(), d.getMonth(), 1);
+    const e = new Date(d.getFullYear(), d.getMonth()+1, 1);
+    return [s,e];
+  }
+}
+function inRange(entry, s, e){
+  const t = new Date(entry.date+"T00:00:00");
+  return t>=s && t<e;
+}
+function periodLabel(){
+  const [s,e] = periodRange();
+  const opts = {month:"short", day:"numeric"};
+  if(view==="daily"){
+    return [s.toLocaleDateString(undefined,{weekday:"long"}), s.toLocaleDateString(undefined,{month:"long",day:"numeric",year:"numeric"})];
+  } else if(view==="weekly"){
+    const eIncl = new Date(e); eIncl.setDate(eIncl.getDate()-1);
+    return ["Week of "+s.toLocaleDateString(undefined,opts), s.toLocaleDateString(undefined,opts)+" – "+eIncl.toLocaleDateString(undefined,opts)];
+  } else {
+    return [s.toLocaleDateString(undefined,{month:"long",year:"numeric"}), ""];
+  }
+}
+function shiftPeriod(dir){
+  const d = new Date(refDate);
+  if(view==="daily") d.setDate(d.getDate()+dir);
+  else if(view==="weekly") d.setDate(d.getDate()+7*dir);
+  else d.setMonth(d.getMonth()+dir);
+  refDate = d;
+  render();
+}
+function populateCategories(type){
+  const sel = document.getElementById("fCategory");
+  sel.innerHTML = "";
+  (type==="income"?INC_CATS:EXP_CATS).forEach(c=>{
+    const o = document.createElement("option"); o.value=c; o.textContent=c; sel.appendChild(o);
+  });
+}
+function render(){
+  document.getElementById("currencyPill").textContent = currency;
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active", t.dataset.view===view));
+  const [s,e] = periodRange();
+  const [main,sub] = periodLabel();
+  document.getElementById("periodMain").textContent = main;
+  document.getElementById("periodSub").textContent = sub;
+
+  const periodEntries = entries.filter(en=>inRange(en,s,e)).sort((a,b)=>b.date.localeCompare(a.date));
+  let totalIn=0, totalOut=0;
+  const byCat = {};
+  periodEntries.forEach(en=>{
+    if(en.type==="income") totalIn += en.amount;
+    else { totalOut += en.amount; byCat[en.category]=(byCat[en.category]||0)+en.amount; }
+  });
+  document.getElementById("inAmt").textContent = fmt(totalIn);
+  document.getElementById("outAmt").textContent = fmt(totalOut);
+  const net = totalIn-totalOut;
+  const netEl = document.getElementById("netAmt");
+  netEl.textContent = fmt(net);
+  netEl.style.color = net<0 ? "var(--rust)" : "var(--sage)";
+
+  const chartBox = document.getElementById("chartBox");
+  const cats = Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+  if(cats.length===0){
+    chartBox.innerHTML = '<div class="empty-note">No expenses in this period yet.</div>';
+  } else {
+    const max = cats[0][1];
+    chartBox.innerHTML = cats.map(([cat,amt])=>`
+      <div class="bar-row">
+        <div class="bar-top"><span>${cat}</span><span class="amt">${fmt(amt)}</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:${Math.max(4,(amt/max*100))}%"></div></div>
+      </div>`).join("");
+  }
+
+  const listEl = document.getElementById("entryList");
+  if(periodEntries.length===0){
+    listEl.innerHTML = '<div class="empty-note">Nothing logged in this period.</div>';
+  } else {
+    listEl.innerHTML = periodEntries.map(en=>{
+      const d = new Date(en.date+"T00:00:00");
+      const dLabel = d.toLocaleDateString(undefined,{month:"short",day:"numeric"});
+      return `<div class="entry" data-id="${en.id}">
+        <div class="dot ${en.type}"></div>
+        <div class="mid">
+          <div class="cat">${en.category}</div>
+          <div class="meta">${dLabel}${en.note?" · "+en.note:""}</div>
+        </div>
+        <div class="amt ${en.type}">${en.type==="income"?"+":"-"}${fmt(en.amount)}</div>
+        <button class="edit-btn" data-id="${en.id}">✎</button>
+      </div>`;
+    }).join("");
+  }
+
+  const allBalance = entries.reduce((sum,en)=> sum + (en.type==="income"?en.amount:-en.amount), 0);
+  const balEl = document.getElementById("balanceAmt");
+  balEl.textContent = fmt(allBalance);
+  balEl.classList.toggle("neg", allBalance<0);
+}
+
+function openSheet(entry){
+  editingId = entry ? entry.id : null;
+  document.getElementById("sheetTitle").textContent = entry ? "Edit entry" : "Add entry";
+  const type = entry ? entry.type : "expense";
+  setType(type);
+  populateCategories(type);
+  document.getElementById("fAmount").value = entry ? entry.amount : "";
+  document.getElementById("fDate").value = entry ? entry.date : toKey(new Date());
+  document.getElementById("fCategory").value = entry ? entry.category : (type==="income"?INC_CATS[0]:EXP_CATS[0]);
+  document.getElementById("fCurrency").value = currency;
+  document.getElementById("fNote").value = entry ? (entry.note||"") : "";
+  document.getElementById("deleteRow").style.display = entry ? "flex" : "none";
+  document.getElementById("backdrop").classList.add("open");
+}
+function closeSheet(){ document.getElementById("backdrop").classList.remove("open"); }
+function setType(type){
+  document.getElementById("typeExpense").classList.toggle("sel", type==="expense");
+  document.getElementById("typeIncome").classList.toggle("sel", type==="income");
+  document.getElementById("typeExpense").dataset.active = type==="expense";
+  document.getElementById("typeIncome").dataset.active = type==="income";
+}
+function currentType(){
+  return document.getElementById("typeIncome").classList.contains("sel") ? "income" : "expense";
+}
+
+document.getElementById("tabs").addEventListener("click", e=>{
+  const t = e.target.closest(".tab"); if(!t) return;
+  view = t.dataset.view; render();
+});
+document.getElementById("prevBtn").onclick = ()=>shiftPeriod(-1);
+document.getElementById("nextBtn").onclick = ()=>shiftPeriod(1);
+document.getElementById("addBtn").onclick = ()=>openSheet(null);
+document.getElementById("cancelBtn").onclick = closeSheet;
+document.getElementById("backdrop").addEventListener("click", e=>{ if(e.target.id==="backdrop") closeSheet(); });
+document.getElementById("typeExpense").onclick = ()=>{ setType("expense"); populateCategories("expense"); };
+document.getElementById("typeIncome").onclick = ()=>{ setType("income"); populateCategories("income"); };
+
+document.getElementById("entryList").addEventListener("click", e=>{
+  const btn = e.target.closest(".edit-btn"); if(!btn) return;
+  const en = entries.find(x=>x.id===btn.dataset.id);
+  if(en) openSheet(en);
+});
+
+document.getElementById("saveBtn").onclick = ()=>{
+  const amount = parseFloat(document.getElementById("fAmount").value);
+  const date = document.getElementById("fDate").value;
+  const category = document.getElementById("fCategory").value;
+  const note = document.getElementById("fNote").value.trim();
+  const type = currentType();
+  if(!amount || amount<=0 || !date) return;
+  currency = document.getElementById("fCurrency").value;
+  if(editingId){
+    const en = entries.find(x=>x.id===editingId);
+    Object.assign(en, {amount, date, category, note, type});
+  } else {
+    entries.push({id: Date.now().toString(36)+Math.random().toString(36).slice(2,6), amount, date, category, note, type});
+  }
+  save(); closeSheet(); render();
+};
+document.getElementById("deleteBtn").onclick = ()=>{
+  entries = entries.filter(x=>x.id!==editingId);
+  save(); closeSheet(); render();
+};
+
+document.getElementById("exportBtn").onclick = async ()=>{
+  if(entries.length===0) return;
+  const rows = [["Date","Type","Category","Amount","Currency","Note"]];
+  entries.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(en=>{
+    const esc = s => `"${String(s).replace(/"/g,'""')}"`;
+    rows.push([en.date, en.type, esc(en.category), en.amount.toFixed(2), currency, esc(en.note||"")]);
+  });
+  const csv = rows.map(r=>r.join(",")).join("\n");
+  try{
+    if(!window.claude) return;
+    const downloads = await window.claude.use("downloads");
+    if(downloads){
+      await downloads.save({filename:"ledger-export.csv", data: csv});
+    }
+  }catch(e){ /* viewer declined or unavailable */ }
+};
+
+load();
+populateCategories("expense");
+populateCurrencies();
+render();
+</script>
+</body>
+</html>
